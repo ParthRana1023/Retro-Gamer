@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.55;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(transparent 0, rgba(255, 255, 255, 0.015) 50%, transparent 100%),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.015) 0,
+      rgba(255, 255, 255, 0.015) 1px,
+      transparent 1px,
+      transparent 72px
+    );
+  opacity: 0.5;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-retro);
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+a {
+  color: var(--text-accent);
+  text-decoration: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+input {
+  width: 100%;
+  border: 1px solid rgba(123, 154, 255, 0.22);
+  background: rgba(3, 8, 18, 0.66);
+  color: var(--text-primary);
+  padding: 0.85rem 0.95rem;
+  border-radius: var(--radius-sm);
+}
+
+button {
+  cursor: pointer;
+  border: 1px solid rgba(123, 154, 255, 0.18);
+  background: rgba(19, 32, 63, 0.85);
+  color: var(--text-primary);
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-sm);
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+button:hover:enabled {
+  transform: translateY(-1px);
+  box-shadow: var(--border-glow);
+  border-color: rgba(86, 240, 255, 0.42);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

@@ -1,2 +1,2 @@
-# Retro-Gamer
+# RetroGamer
 

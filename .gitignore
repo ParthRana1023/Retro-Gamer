@@ -1,0 +1,13 @@
+node_modules
+
+.claude
+
+dist
+
+docs
+
+.env
+
+implementation_plan.md
+
+task.md

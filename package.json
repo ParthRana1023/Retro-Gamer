@@ -1,0 +1,33 @@
+{
+  "name": "retrogamer",
+  "version": "1.0.0",
+  "description": "Retro game emulation platform",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "keywords": [
+    "retro",
+    "gaming",
+    "emulation"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "nostalgist": "^0.21.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^14.3.0",
+    "@vitejs/plugin-react": "^6.0.1",
+    "jsdom": "^24.1.0",
+    "supabase": "^2.79.0",
+    "vite": "^8.0.0",
+    "vitest": "^4.1.0"
+  }
+}

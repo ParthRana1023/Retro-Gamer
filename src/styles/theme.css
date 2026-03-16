@@ -1,0 +1,28 @@
+:root {
+  --bg-primary: #040813;
+  --bg-secondary: #091121;
+  --bg-tertiary: #13203f;
+  --text-primary: #f7f7fb;
+  --text-secondary: #acb8d6;
+  --text-accent: #56f0ff;
+  --border-color: rgba(123, 154, 255, 0.22);
+  --border-glow: 0 0 18px rgba(86, 240, 255, 0.28);
+  --font-retro: 'Press Start 2P', monospace;
+  --font-body: 'Space Grotesk', 'Segoe UI', sans-serif;
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 3rem;
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 28px;
+}
+
+[data-theme='light'] {
+  --bg-primary: #eff4ff;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #dce8ff;
+  --text-primary: #15213b;
+  --text-secondary: #53637f;
+}
