@@ -94,6 +94,8 @@ export class EmulatorCore {
       sramType: profile.sramType,
       loadedAt: Date.now(),
       isExperimental: false,
+      isPaused: false,
+      isFastForwarding: false,
       lastInputSnapshot: {},
       volume: clampVolume(options.volume ?? 75),
     };
@@ -168,6 +170,32 @@ export class EmulatorCore {
 
     await this.instance.loadState(savedState.state);
     return true;
+  }
+
+  togglePause() {
+    if (!this.instance || !this.session) {
+      return false;
+    }
+
+    if (this.session.isPaused) {
+      this.instance.resume();
+      this.session.isPaused = false;
+    } else {
+      this.instance.pause();
+      this.session.isPaused = true;
+    }
+
+    return this.session.isPaused;
+  }
+
+  toggleFastForward() {
+    if (!this.instance || !this.session) {
+      return false;
+    }
+
+    this.instance.sendCommand('FAST_FORWARD');
+    this.session.isFastForwarding = !this.session.isFastForwarding;
+    return this.session.isFastForwarding;
   }
 
   setVolume(nextVolume) {

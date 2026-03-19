@@ -7,6 +7,8 @@ export function EmulatorDisplay({
   onCanvasReady,
   onSaveState,
   onLoadState,
+  onTogglePause,
+  onToggleFastForward,
   lastSaveTimestamp,
 }) {
   const canvasRef = useRef(null);
@@ -58,9 +60,15 @@ export function EmulatorDisplay({
           <button type="button" onClick={onLoadState} disabled={!session}>
             Load state
           </button>
+          <button type="button" onClick={onTogglePause} disabled={!session}>
+            {session?.isPaused ? 'Resume' : 'Pause'}
+          </button>
+          <button type="button" onClick={onToggleFastForward} disabled={!session}>
+            {session?.isFastForwarding ? '1x speed' : '2x speed'}
+          </button>
         </div>
         <span className="toolbar-note toolbar-status">
-          {status}
+          {session?.isFastForwarding ? 'fast-forward' : status}
         </span>
         <span className="toolbar-note">
           {lastSaveTimestamp ? `Last save ${new Date(lastSaveTimestamp).toLocaleString()}` : 'No save captured yet'}

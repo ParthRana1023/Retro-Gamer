@@ -1,20 +1,8 @@
 import { useEffect } from 'react';
-import { BUTTON_NAMES, DEFAULT_KEY_BINDINGS } from '../services/controllerManager';
-
-const LABELS = {
-  up: 'Up',
-  down: 'Down',
-  left: 'Left',
-  right: 'Right',
-  start: 'Start',
-  select: 'Select',
-  a: 'A',
-  b: 'B',
-  x: 'X',
-  y: 'Y',
-  l: 'L',
-  r: 'R',
-};
+import {
+  DEFAULT_KEY_BINDINGS,
+  getBindingLabel,
+} from '../services/controllerManager';
 
 const prettifyKeyCode = (code) =>
   code
@@ -27,6 +15,8 @@ const prettifyKeyCode = (code) =>
 
 export function ControlsModal({
   isOpen,
+  consoleName,
+  buttons,
   keyBindings,
   pendingBinding,
   onClose,
@@ -64,7 +54,7 @@ export function ControlsModal({
         <div className="modal-header">
           <div>
             <p className="eyebrow">Controls</p>
-            <h2 id="controls-modal-title">Keyboard mapping</h2>
+            <h2 id="controls-modal-title">{consoleName} keyboard mapping</h2>
           </div>
           <button type="button" className="ghost-button" onClick={onClose}>
             Close
@@ -74,21 +64,21 @@ export function ControlsModal({
         <div className="modal-copy">
           <strong>
             {pendingBinding
-              ? `Press a new key for ${LABELS[pendingBinding]}.`
+              ? `Press a new key for ${getBindingLabel(consoleName, pendingBinding)}.`
               : 'Click any control tile to rebind it.'}
           </strong>
-          <span>Changes apply immediately and are saved in your browser.</span>
+          <span>This editor only shows the controls used by the current console.</span>
         </div>
 
         <div className="modal-key-grid">
-          {BUTTON_NAMES.map((button) => (
+          {buttons.map((button) => (
             <button
               key={button}
               type="button"
               className={`key-binding modal-key-binding ${pendingBinding === button ? 'listening' : ''}`}
               onClick={() => onBeginRebind(button)}
             >
-              <span>{LABELS[button]}</span>
+              <span>{getBindingLabel(consoleName, button)}</span>
               <strong>{prettifyKeyCode(keyBindings[button] ?? DEFAULT_KEY_BINDINGS[button])}</strong>
             </button>
           ))}
@@ -96,7 +86,7 @@ export function ControlsModal({
 
         <div className="modal-footer">
           <button type="button" onClick={onResetBindings}>
-            Reset defaults
+            Reset this console
           </button>
           <button type="button" className="ghost-button" onClick={onClose}>
             Done

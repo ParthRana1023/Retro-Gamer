@@ -4,7 +4,13 @@ import { ControlsModal } from './components/ControlsModal';
 import { EmulatorDisplay } from './components/EmulatorDisplay';
 import { Library } from './components/Library';
 import './App.css';
-import { ControllerManager, DEFAULT_KEY_BINDINGS } from './services/controllerManager';
+import {
+  ControllerManager,
+  createBindingProfiles,
+  getBindingLabel,
+  getBindingsForConsole,
+  getButtonsForConsole,
+} from './services/controllerManager';
 import { detectConsoleProfile, EmulatorCore } from './services/emulatorCore';
 import { getCurrentUser, onAuthStateChange, signIn, signOut, signUp } from './services/supabase';
 import { SAVE_TYPES, StorageManager } from './services/storageManager';
@@ -21,11 +27,13 @@ const readStoredJson = (key, fallback) => {
 
   try {
     const raw = window.localStorage.getItem(key);
-    return raw ? { ...fallback, ...JSON.parse(raw) } : fallback;
+    return raw ? JSON.parse(raw) : fallback;
   } catch {
     return fallback;
   }
 };
+
+const readStoredBindingProfiles = () => createBindingProfiles(readStoredJson(KEY_BINDINGS_STORAGE_KEY, {}));
 
 const readStoredVolume = () => {
   if (typeof window === 'undefined') {
@@ -36,14 +44,19 @@ const readStoredVolume = () => {
   return Number.isFinite(raw) && raw >= 0 && raw <= 100 ? raw : 75;
 };
 
-const formatBindingSummary = (keyBindings) =>
-  `Move ${keyBindings.up}/${keyBindings.left}/${keyBindings.down}/${keyBindings.right} • A ${keyBindings.a} • B ${keyBindings.b}`;
+const formatBindingSummary = (consoleName, buttons, keyBindings) => {
+  const summaryButtons = buttons.filter((button) => ['up', 'left', 'down', 'right', 'a', 'b', 'x', 'y', 'l', 'r', 'start', 'select'].includes(button));
+  return summaryButtons
+    .slice(0, 6)
+    .map((button) => `${getBindingLabel(consoleName, button)} ${keyBindings[button]}`)
+    .join(' • ');
+};
 
 function App() {
-  const [keyBindings, setKeyBindings] = useState(() => readStoredJson(KEY_BINDINGS_STORAGE_KEY, DEFAULT_KEY_BINDINGS));
+  const [bindingProfiles, setBindingProfiles] = useState(() => readStoredBindingProfiles());
   const [volume, setVolume] = useState(() => readStoredVolume());
   const storageRef = useRef(new StorageManager());
-  const controllerRef = useRef(new ControllerManager(keyBindings));
+  const controllerRef = useRef(new ControllerManager(getBindingsForConsole(readStoredBindingProfiles(), 'default')));
   const emulatorRef = useRef(new EmulatorCore());
   const volumeReloadInFlightRef = useRef(false);
 
@@ -67,8 +80,11 @@ function App() {
   );
 
   const activeSession = emulatorRef.current.getSession();
+  const activeConsoleName = activeSession?.consoleName ?? activeRom?.consoleName ?? 'default';
+  const activeButtons = getButtonsForConsole(activeConsoleName);
+  const activeBindings = getBindingsForConsole(bindingProfiles, activeConsoleName);
   const syncMode = user ? 'cloud' : 'guest';
-  const bindingsSummary = formatBindingSummary(keyBindings);
+  const bindingsSummary = formatBindingSummary(activeConsoleName, activeButtons, activeBindings);
   const sessionMeta = activeSession
     ? `${activeSession.consoleName} via ${activeSession.core}`
     : 'Import a ROM to start a local session.';
@@ -141,21 +157,31 @@ function App() {
         return;
       }
 
+      if (event.code === 'Escape') {
+        setPendingBinding(null);
+        return;
+      }
+
       event.preventDefault();
-      const nextBindings = { ...keyBindings, [pendingBinding]: event.code };
-      setKeyBindings(nextBindings);
+      setBindingProfiles((current) => ({
+        ...current,
+        [activeConsoleName]: {
+          ...getBindingsForConsole(current, activeConsoleName),
+          [pendingBinding]: event.code,
+        },
+      }));
       setPendingBinding(null);
-      setMessage(`Updated ${pendingBinding.toUpperCase()} to ${event.code}.`);
+      setMessage(`Updated ${getBindingLabel(activeConsoleName, pendingBinding)} to ${event.code}.`);
     };
 
     window.addEventListener('keydown', handleRebind);
     return () => window.removeEventListener('keydown', handleRebind);
-  }, [keyBindings, pendingBinding]);
+  }, [activeConsoleName, pendingBinding]);
 
   useEffect(() => {
-    controllerRef.current.setKeyboardBindings(keyBindings);
-    window.localStorage.setItem(KEY_BINDINGS_STORAGE_KEY, JSON.stringify(keyBindings));
-  }, [keyBindings]);
+    controllerRef.current.setKeyboardBindings(activeBindings);
+    window.localStorage.setItem(KEY_BINDINGS_STORAGE_KEY, JSON.stringify(bindingProfiles));
+  }, [activeBindings, bindingProfiles]);
 
   useEffect(() => {
     storageRef.current.setAuthSession(user);
@@ -256,6 +282,32 @@ function App() {
 
   const handleVolumeCommit = async (nextVolume) => {
     await applyVolumePreference(nextVolume);
+  };
+
+  const handleTogglePause = () => {
+    const paused = emulatorRef.current.togglePause();
+    const nextStatus = emulatorRef.current.getStatus();
+    setStatus(nextStatus);
+
+    if (!activeRom) {
+      return;
+    }
+
+    setMessage(paused ? `${activeRom.name} paused.` : `${activeRom.name} resumed.`);
+  };
+
+  const handleToggleFastForward = () => {
+    const fastForwardEnabled = emulatorRef.current.toggleFastForward();
+
+    if (!activeRom) {
+      return;
+    }
+
+    setMessage(
+      fastForwardEnabled
+        ? `Fast-forward enabled for ${activeRom.name}.`
+        : `Fast-forward disabled for ${activeRom.name}.`,
+    );
   };
 
   const selectRom = async (romId) => {
@@ -426,6 +478,8 @@ function App() {
           onCanvasReady={handleCanvasReady}
           onSaveState={handleSaveState}
           onLoadState={handleLoadState}
+          onTogglePause={handleTogglePause}
+          onToggleFastForward={handleToggleFastForward}
           lastSaveTimestamp={saveSlots[0]?.updatedAt}
         />
 
@@ -481,12 +535,12 @@ function App() {
                   <strong>{bindingsSummary}</strong>
                 </div>
                 <div className="utility-card">
-                  <span className="utility-label">Controls editor</span>
-                  <strong>Open the popup editor to remap keys without keeping the dock cluttered.</strong>
+                  <span className="utility-label">Primary cores</span>
+                  <strong>NES, SNES, Genesis, GB, GBC, and GBA are all mapped to their production cores in the launcher.</strong>
                 </div>
                 <div className="utility-card">
-                  <span className="utility-label">Save flow</span>
-                  <strong>Primary save and load actions now live under the emulator for a single clear control point.</strong>
+                  <span className="utility-label">Console-aware layout</span>
+                  <strong>The controls popup now switches labels and available buttons based on the active console.</strong>
                 </div>
               </div>
             ) : null}
@@ -539,7 +593,9 @@ function App() {
 
       <ControlsModal
         isOpen={controlsModalOpen}
-        keyBindings={keyBindings}
+        consoleName={activeConsoleName}
+        buttons={activeButtons}
+        keyBindings={activeBindings}
         pendingBinding={pendingBinding}
         onClose={() => {
           setControlsModalOpen(false);
@@ -547,9 +603,12 @@ function App() {
         }}
         onBeginRebind={setPendingBinding}
         onResetBindings={() => {
-          setKeyBindings(DEFAULT_KEY_BINDINGS);
+          setBindingProfiles((current) => ({
+            ...current,
+            [activeConsoleName]: getBindingsForConsole(createBindingProfiles({}), activeConsoleName),
+          }));
           setPendingBinding(null);
-          setMessage('Controls reset to defaults.');
+          setMessage(`${activeConsoleName} controls reset to defaults.`);
         }}
       />
     </div>
@@ -557,4 +616,3 @@ function App() {
 }
 
 export default App;
-

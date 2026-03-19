@@ -1,4 +1,4 @@
-export const DEFAULT_KEY_BINDINGS = {
+const BASE_KEY_BINDINGS = {
   up: 'KeyW',
   down: 'KeyS',
   left: 'KeyA',
@@ -11,6 +11,150 @@ export const DEFAULT_KEY_BINDINGS = {
   y: 'KeyI',
   l: 'KeyQ',
   r: 'KeyE',
+};
+
+export const DEFAULT_KEY_BINDINGS = { ...BASE_KEY_BINDINGS };
+
+export const CONSOLE_CONTROL_PROFILES = {
+  default: {
+    buttons: ['up', 'down', 'left', 'right', 'start', 'select', 'a', 'b', 'x', 'y', 'l', 'r'],
+    labels: {
+      up: 'Up',
+      down: 'Down',
+      left: 'Left',
+      right: 'Right',
+      start: 'Start',
+      select: 'Select',
+      a: 'A',
+      b: 'B',
+      x: 'X',
+      y: 'Y',
+      l: 'L',
+      r: 'R',
+    },
+    defaults: { ...BASE_KEY_BINDINGS },
+  },
+  NES: {
+    buttons: ['up', 'down', 'left', 'right', 'start', 'select', 'a', 'b'],
+    labels: {
+      up: 'Up',
+      down: 'Down',
+      left: 'Left',
+      right: 'Right',
+      start: 'Start',
+      select: 'Select',
+      a: 'A',
+      b: 'B',
+    },
+    defaults: {
+      ...BASE_KEY_BINDINGS,
+      a: 'KeyK',
+      b: 'KeyJ',
+    },
+  },
+  SNES: {
+    buttons: ['up', 'down', 'left', 'right', 'start', 'select', 'a', 'b', 'x', 'y', 'l', 'r'],
+    labels: {
+      up: 'Up',
+      down: 'Down',
+      left: 'Left',
+      right: 'Right',
+      start: 'Start',
+      select: 'Select',
+      a: 'A',
+      b: 'B',
+      x: 'X',
+      y: 'Y',
+      l: 'L',
+      r: 'R',
+    },
+    defaults: { ...BASE_KEY_BINDINGS },
+  },
+  Genesis: {
+    buttons: ['up', 'down', 'left', 'right', 'start', 'select', 'a', 'b', 'x', 'y', 'l', 'r'],
+    labels: {
+      up: 'Up',
+      down: 'Down',
+      left: 'Left',
+      right: 'Right',
+      start: 'Start',
+      select: 'Mode',
+      a: 'A',
+      b: 'B',
+      x: 'C',
+      y: 'X',
+      l: 'Y',
+      r: 'Z',
+    },
+    defaults: {
+      ...BASE_KEY_BINDINGS,
+      select: 'ShiftRight',
+      a: 'KeyJ',
+      b: 'KeyK',
+      x: 'KeyL',
+      y: 'KeyU',
+      l: 'KeyI',
+      r: 'KeyO',
+    },
+  },
+  GB: {
+    buttons: ['up', 'down', 'left', 'right', 'start', 'select', 'a', 'b'],
+    labels: {
+      up: 'Up',
+      down: 'Down',
+      left: 'Left',
+      right: 'Right',
+      start: 'Start',
+      select: 'Select',
+      a: 'A',
+      b: 'B',
+    },
+    defaults: {
+      ...BASE_KEY_BINDINGS,
+      a: 'KeyK',
+      b: 'KeyJ',
+    },
+  },
+  GBC: {
+    buttons: ['up', 'down', 'left', 'right', 'start', 'select', 'a', 'b'],
+    labels: {
+      up: 'Up',
+      down: 'Down',
+      left: 'Left',
+      right: 'Right',
+      start: 'Start',
+      select: 'Select',
+      a: 'A',
+      b: 'B',
+    },
+    defaults: {
+      ...BASE_KEY_BINDINGS,
+      a: 'KeyK',
+      b: 'KeyJ',
+    },
+  },
+  GBA: {
+    buttons: ['up', 'down', 'left', 'right', 'start', 'select', 'a', 'b', 'l', 'r'],
+    labels: {
+      up: 'Up',
+      down: 'Down',
+      left: 'Left',
+      right: 'Right',
+      start: 'Start',
+      select: 'Select',
+      a: 'A',
+      b: 'B',
+      l: 'L',
+      r: 'R',
+    },
+    defaults: {
+      ...BASE_KEY_BINDINGS,
+      a: 'KeyK',
+      b: 'KeyJ',
+      l: 'KeyQ',
+      r: 'KeyE',
+    },
+  },
 };
 
 const GAMEPAD_BUTTON_MAP = {
@@ -84,6 +228,38 @@ const isEditableElement = (target) => {
   }
 
   return false;
+};
+
+export const getControlProfile = (consoleName) => CONSOLE_CONTROL_PROFILES[consoleName] ?? CONSOLE_CONTROL_PROFILES.default;
+export const getButtonsForConsole = (consoleName) => getControlProfile(consoleName).buttons;
+export const getBindingLabel = (consoleName, button) => getControlProfile(consoleName).labels[button] ?? button.toUpperCase();
+export const getDefaultBindingsForConsole = (consoleName) => ({ ...CONSOLE_CONTROL_PROFILES.default.defaults, ...getControlProfile(consoleName).defaults });
+export const createBindingProfiles = (storedBindings = {}) => {
+  const looksLikeLegacyFlatBindings = Object.keys(storedBindings).some((key) => BUTTON_NAMES.includes(key));
+  const profiles = {};
+
+  Object.keys(CONSOLE_CONTROL_PROFILES).forEach((consoleName) => {
+    const profileDefaults = getDefaultBindingsForConsole(consoleName);
+    if (looksLikeLegacyFlatBindings) {
+      profiles[consoleName] = { ...profileDefaults, ...storedBindings };
+      return;
+    }
+
+    profiles[consoleName] = {
+      ...profileDefaults,
+      ...(storedBindings[consoleName] ?? {}),
+    };
+  });
+
+  return profiles;
+};
+
+export const getBindingsForConsole = (bindingProfiles, consoleName) => {
+  const profileDefaults = getDefaultBindingsForConsole(consoleName);
+  return {
+    ...profileDefaults,
+    ...(bindingProfiles?.[consoleName] ?? bindingProfiles?.default ?? {}),
+  };
 };
 
 export class ControllerManager {

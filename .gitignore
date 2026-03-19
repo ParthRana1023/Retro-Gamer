@@ -11,3 +11,7 @@ docs
 implementation_plan.md
 
 task.md
+
+tests/
+
+__tests__/
