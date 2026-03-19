@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AuthPanel } from './components/AuthPanel';
-import { ControlsPanel } from './components/ControlsPanel';
+import { ControlsModal } from './components/ControlsModal';
 import { EmulatorDisplay } from './components/EmulatorDisplay';
 import { Library } from './components/Library';
 import './App.css';
@@ -36,6 +36,9 @@ const readStoredVolume = () => {
   return Number.isFinite(raw) && raw >= 0 && raw <= 100 ? raw : 75;
 };
 
+const formatBindingSummary = (keyBindings) =>
+  `Move ${keyBindings.up}/${keyBindings.left}/${keyBindings.down}/${keyBindings.right} • A ${keyBindings.a} • B ${keyBindings.b}`;
+
 function App() {
   const [keyBindings, setKeyBindings] = useState(() => readStoredJson(KEY_BINDINGS_STORAGE_KEY, DEFAULT_KEY_BINDINGS));
   const [volume, setVolume] = useState(() => readStoredVolume());
@@ -53,9 +56,10 @@ function App() {
   const [authPending, setAuthPending] = useState(false);
   const [authError, setAuthError] = useState('');
   const [pendingBinding, setPendingBinding] = useState(null);
-  const [activeDockTab, setActiveDockTab] = useState('controls');
+  const [activeDockTab, setActiveDockTab] = useState('session');
   const [authExpanded, setAuthExpanded] = useState(false);
   const [volumeReloadPending, setVolumeReloadPending] = useState(false);
+  const [controlsModalOpen, setControlsModalOpen] = useState(false);
 
   const activeRom = useMemo(
     () => roms.find((rom) => rom.id === activeRomId) ?? null,
@@ -64,42 +68,14 @@ function App() {
 
   const activeSession = emulatorRef.current.getSession();
   const syncMode = user ? 'cloud' : 'guest';
+  const bindingsSummary = formatBindingSummary(keyBindings);
+  const sessionMeta = activeSession
+    ? `${activeSession.consoleName} via ${activeSession.core}`
+    : 'Import a ROM to start a local session.';
 
   const refreshSaveSlots = async (romId) => {
     const records = await storageRef.current.listStates(romId);
     setSaveSlots(records.filter((record) => record.type === SAVE_TYPES.STATE));
-  };
-
-  const persistSramForSession = async (rom = activeRom) => {
-    if (!rom) {
-      return null;
-    }
-
-    const sram = await emulatorRef.current.captureSRAM();
-    if (!sram || sram.size === 0) {
-      return null;
-    }
-
-    await storageRef.current.saveSRAM(rom.id, sram, {
-      metadata: {
-        romName: rom.name,
-        consoleName: rom.consoleName,
-      },
-    });
-
-    return sram;
-  };
-
-  const persistSramForSessionSafe = async (rom = activeRom) => {
-    try {
-      return await persistSramForSession(rom);
-    } catch (error) {
-      if (String(error?.message ?? error).toLowerCase().includes('fs timeout')) {
-        return null;
-      }
-      setMessage(`Continuing without SRAM sync: ${error.message}`);
-      return null;
-    }
   };
 
   const captureCurrentState = async () => {
@@ -382,9 +358,11 @@ function App() {
       }
 
       const currentUser = await getCurrentUser();
-      setUser(currentUser.data?.user ?? null);
+      const nextUser = currentUser.data?.user ?? null;
+      setUser(nextUser);
+      storageRef.current.setAuthSession(nextUser);
       setAuthExpanded(false);
-      setMessage(currentUser.data?.user ? 'Cloud sync connected.' : 'Check your email to finish sign-up.');
+      setMessage(nextUser ? 'Cloud sync connected.' : 'Check your email to finish sign-up.');
     } catch (error) {
       setAuthError(error.message);
     } finally {
@@ -403,6 +381,7 @@ function App() {
       }
 
       setUser(null);
+      storageRef.current.setAuthSession(null);
       setMessage('Returned to guest mode.');
     } catch (error) {
       setAuthError(error.message);
@@ -414,27 +393,20 @@ function App() {
   return (
     <div className="dashboard-shell">
       <header className="topbar">
-        <div className="topbar-primary">
+        <div className="topbar-brand">
           <div>
             <p className="eyebrow">RetroGamer</p>
             <h1>Control Deck</h1>
           </div>
-          <div className="topbar-context">
+          <div className="topbar-copy">
             <strong>{activeSession?.name ?? 'No ROM loaded'}</strong>
             <span>{message}</span>
           </div>
         </div>
 
-        <div className="topbar-actions">
+        <div className="topbar-meta">
           <span className="status-chip">{syncMode === 'cloud' ? 'Cloud mode' : 'Guest mode'}</span>
-          <span className="status-chip">{status}</span>
-          <span className="status-chip">Vol {volume}%</span>
-          <button type="button" onClick={handleSaveState} disabled={!activeSession}>
-            Save
-          </button>
-          <button type="button" onClick={handleLoadState} disabled={!activeSession}>
-            Load
-          </button>
+          <span className={`status-chip status-${status}`}>{status}</span>
         </div>
       </header>
 
@@ -455,29 +427,35 @@ function App() {
           onSaveState={handleSaveState}
           onLoadState={handleLoadState}
           lastSaveTimestamp={saveSlots[0]?.updatedAt}
-          volume={volume}
         />
 
         <aside className="dock-panel utility-dock">
           <div className="dock-header">
             <div>
-              <p className="eyebrow">Utility Dock</p>
+              <p className="eyebrow">Control room</p>
               <h2>{activeRom?.consoleName ?? 'Session tools'}</h2>
             </div>
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => setControlsModalOpen(true)}
+            >
+              Edit controls
+            </button>
           </div>
 
           <div className="session-summary">
             <strong>{activeSession?.name ?? 'Idle session'}</strong>
-            <span>{activeSession ? `${activeSession.consoleName} via ${activeSession.core}` : 'Load a ROM to activate save, audio, and mapping tools.'}</span>
+            <span>{sessionMeta}</span>
           </div>
 
           <div className="dock-tabs" role="tablist" aria-label="Utility dock tabs">
             <button
               type="button"
-              className={activeDockTab === 'controls' ? 'dock-tab active' : 'dock-tab'}
-              onClick={() => setActiveDockTab('controls')}
+              className={activeDockTab === 'session' ? 'dock-tab active' : 'dock-tab'}
+              onClick={() => setActiveDockTab('session')}
             >
-              Controls
+              Session
             </button>
             <button
               type="button"
@@ -496,17 +474,21 @@ function App() {
           </div>
 
           <div className="dock-body">
-            {activeDockTab === 'controls' ? (
-              <ControlsPanel
-                keyBindings={keyBindings}
-                pendingBinding={pendingBinding}
-                onBeginRebind={setPendingBinding}
-                onResetBindings={() => {
-                  setKeyBindings(DEFAULT_KEY_BINDINGS);
-                  setPendingBinding(null);
-                  setMessage('Controls reset to defaults.');
-                }}
-              />
+            {activeDockTab === 'session' ? (
+              <div className="dock-content session-content">
+                <div className="utility-card">
+                  <span className="utility-label">Current bindings</span>
+                  <strong>{bindingsSummary}</strong>
+                </div>
+                <div className="utility-card">
+                  <span className="utility-label">Controls editor</span>
+                  <strong>Open the popup editor to remap keys without keeping the dock cluttered.</strong>
+                </div>
+                <div className="utility-card">
+                  <span className="utility-label">Save flow</span>
+                  <strong>Primary save and load actions now live under the emulator for a single clear control point.</strong>
+                </div>
+              </div>
             ) : null}
 
             {activeDockTab === 'audio' ? (
@@ -528,9 +510,14 @@ function App() {
                     onTouchEnd={(event) => handleVolumeCommit(Number(event.currentTarget.value))}
                     onKeyUp={(event) => handleVolumeCommit(Number(event.currentTarget.value))}
                   />
-                  <span className="settings-help">Drag to choose a level, then release to reload the active session with that volume.</span>
+                  <span className="settings-help">
+                    Release the slider to relaunch the current session with the new volume.
+                  </span>
                 </div>
-                <div className="dock-tip">When a game is running, volume changes reload the current ROM and restore the latest in-memory state.</div>
+                <div className="utility-card">
+                  <span className="utility-label">Audio note</span>
+                  <strong>Volume is applied on reload because the active emulator core does not expose a dependable live volume API.</strong>
+                </div>
               </div>
             ) : null}
 
@@ -547,15 +534,27 @@ function App() {
               />
             ) : null}
           </div>
-
-          <div className="dock-footer">
-            <strong>Current bindings</strong>
-            <span>{`Move ${keyBindings.up}/${keyBindings.left}/${keyBindings.down}/${keyBindings.right} · A ${keyBindings.a} · B ${keyBindings.b}`}</span>
-          </div>
         </aside>
       </main>
+
+      <ControlsModal
+        isOpen={controlsModalOpen}
+        keyBindings={keyBindings}
+        pendingBinding={pendingBinding}
+        onClose={() => {
+          setControlsModalOpen(false);
+          setPendingBinding(null);
+        }}
+        onBeginRebind={setPendingBinding}
+        onResetBindings={() => {
+          setKeyBindings(DEFAULT_KEY_BINDINGS);
+          setPendingBinding(null);
+          setMessage('Controls reset to defaults.');
+        }}
+      />
     </div>
   );
 }
 
 export default App;
+

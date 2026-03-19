@@ -8,7 +8,6 @@ export function EmulatorDisplay({
   onSaveState,
   onLoadState,
   lastSaveTimestamp,
-  volume,
 }) {
   const canvasRef = useRef(null);
 
@@ -23,14 +22,15 @@ export function EmulatorDisplay({
   return (
     <section className="display-stage">
       <div className="stage-header">
-        <div>
+        <div className="stage-title-block">
           <p className="eyebrow">Emulator</p>
-          <h2>{session?.name ?? 'Ready to launch'}</h2>
+          <h2 title={session?.name ?? 'Ready to launch'}>{session?.name ?? 'Ready to launch'}</h2>
         </div>
-        <div className="stage-badges">
-          {session?.consoleName ? <span className="status-pill">{session.consoleName}</span> : null}
-          <span className="status-pill">{status}</span>
-        </div>
+        {session?.consoleName ? (
+          <div className="stage-badges">
+            <span className="status-pill">{session.consoleName}</span>
+          </div>
+        ) : null}
       </div>
 
       <div className={`screen-shell stage-screen ${isDualScreen ? 'dual-screen' : ''}`}>
@@ -51,13 +51,17 @@ export function EmulatorDisplay({
       </div>
 
       <div className="stage-toolbar">
-        <button type="button" onClick={onSaveState} disabled={!session}>
-          Save
-        </button>
-        <button type="button" onClick={onLoadState} disabled={!session}>
-          Load
-        </button>
-        <span className="toolbar-metric">Vol {volume}%</span>
+        <div className="toolbar-actions">
+          <button type="button" onClick={onSaveState} disabled={!session}>
+            Save state
+          </button>
+          <button type="button" onClick={onLoadState} disabled={!session}>
+            Load state
+          </button>
+        </div>
+        <span className="toolbar-note toolbar-status">
+          {status}
+        </span>
         <span className="toolbar-note">
           {lastSaveTimestamp ? `Last save ${new Date(lastSaveTimestamp).toLocaleString()}` : 'No save captured yet'}
         </span>

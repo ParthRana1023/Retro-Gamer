@@ -9,7 +9,6 @@ const formatFileSize = (size) => {
 export function Library({
   roms,
   activeRomId,
-  activeRom,
   onSelectRom,
   onLoadFiles,
 }) {
@@ -32,7 +31,7 @@ export function Library({
           <h2>ROM Vault</h2>
         </div>
         <button type="button" onClick={() => inputRef.current?.click()}>
-          Add
+          Add ROM
         </button>
       </div>
 
@@ -57,7 +56,7 @@ export function Library({
           onChange={(event) => handleFiles(event.target.files)}
         />
         <strong>Drop ROMs</strong>
-        <span>Local-only import.</span>
+        <span>Files stay local to this browser.</span>
       </label>
 
       <div className="library-scroll">
@@ -76,16 +75,11 @@ export function Library({
                 onClick={() => onSelectRom(rom.id)}
               >
                 <span>{rom.name}</span>
-                <small>{rom.consoleName} - {formatFileSize(rom.size)}</small>
+                <small>{rom.consoleName} • {formatFileSize(rom.size)}</small>
               </button>
             ))
           )}
         </div>
-      </div>
-
-      <div className="library-meta">
-        <strong>{activeRom?.name ?? 'No active ROM'}</strong>
-        <span>{activeRom ? `${activeRom.consoleName} - ${formatFileSize(activeRom.size)}` : 'Load a title to begin.'}</span>
       </div>
     </section>
   );
