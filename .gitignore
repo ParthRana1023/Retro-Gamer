@@ -8,10 +8,6 @@ docs
 
 .env
 
-implementation_plan.md
-
-task.md
-
 tests/
 
 __tests__/

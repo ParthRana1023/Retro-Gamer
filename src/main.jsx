@@ -1,7 +1,8 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-import './index.css';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import "./index.css";
+import { Analytics } from "@vercel/analytics/react";
 
 class RootErrorBoundary extends React.Component {
   constructor(props) {
@@ -18,23 +19,23 @@ class RootErrorBoundary extends React.Component {
       return (
         <div
           style={{
-            minHeight: '100vh',
-            padding: '32px',
-            background: '#0c1730',
-            color: '#f7f7fb',
-            fontFamily: 'Segoe UI, sans-serif',
+            minHeight: "100vh",
+            padding: "32px",
+            background: "#0c1730",
+            color: "#f7f7fb",
+            fontFamily: "Segoe UI, sans-serif",
           }}
         >
-          <h1 style={{ marginBottom: '16px' }}>RetroGamer failed to start</h1>
-          <p style={{ marginBottom: '12px' }}>
+          <h1 style={{ marginBottom: "16px" }}>RetroGamer failed to start</h1>
+          <p style={{ marginBottom: "12px" }}>
             The app hit a runtime error before rendering.
           </p>
           <pre
             style={{
-              whiteSpace: 'pre-wrap',
-              background: 'rgba(255,255,255,0.08)',
-              padding: '16px',
-              borderRadius: '12px',
+              whiteSpace: "pre-wrap",
+              background: "rgba(255,255,255,0.08)",
+              padding: "16px",
+              borderRadius: "12px",
             }}
           >
             {String(this.state.error?.message ?? this.state.error)}
@@ -47,10 +48,11 @@ class RootErrorBoundary extends React.Component {
   }
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <RootErrorBoundary>
       <App />
+      <Analytics />
     </RootErrorBoundary>
   </React.StrictMode>,
 );
