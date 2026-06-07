@@ -32,11 +32,24 @@ body,
 body {
   margin: 0;
   color: var(--text-primary);
-  font-family: 'Segoe UI Variable', 'Trebuchet MS', sans-serif;
+  font-family: "Segoe UI Variable", "Trebuchet MS", sans-serif;
   background:
-    radial-gradient(circle at top left, rgba(89, 231, 255, 0.18), transparent 28%),
-    radial-gradient(circle at top right, rgba(255, 176, 103, 0.12), transparent 24%),
-    linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 55%, #0d1830 100%);
+    radial-gradient(
+      circle at top left,
+      rgba(89, 231, 255, 0.18),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at top right,
+      rgba(255, 176, 103, 0.12),
+      transparent 24%
+    ),
+    linear-gradient(
+      180deg,
+      var(--bg-top) 0%,
+      var(--bg-bottom) 55%,
+      #0d1830 100%
+    );
 }
 
 button,
@@ -48,7 +61,11 @@ select {
 
 button {
   border: 1px solid rgba(125, 161, 255, 0.22);
-  background: linear-gradient(180deg, rgba(34, 54, 102, 0.98), rgba(23, 41, 79, 0.98));
+  background: linear-gradient(
+    180deg,
+    rgba(34, 54, 102, 0.98),
+    rgba(23, 41, 79, 0.98)
+  );
   color: var(--text-primary);
   border-radius: 14px;
   padding: 11px 16px;
@@ -77,24 +94,26 @@ button:disabled {
   box-shadow: none;
 }
 
-input[type='range'] {
+input[type="range"] {
   width: 100%;
   accent-color: var(--accent);
 }
 
-input[type='email'],
-input[type='password'] {
+input[type="email"],
+input[type="password"] {
   width: 100%;
   border: 1px solid rgba(125, 161, 255, 0.18);
   border-radius: 14px;
   background: rgba(8, 18, 38, 0.88);
   color: var(--text-primary);
   padding: 12px 14px;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
-input[type='email']:focus,
-input[type='password']:focus {
+input[type="email"]:focus,
+input[type="password"]:focus {
   outline: none;
   border-color: rgba(89, 231, 255, 0.42);
   box-shadow: 0 0 0 3px rgba(89, 231, 255, 0.12);
@@ -183,7 +202,10 @@ input[type='password']:focus {
   background: rgba(89, 231, 255, 0.12);
   color: #effcff;
   font-size: 0.92rem;
-  transition: background 160ms ease, transform 160ms var(--ease-out), box-shadow 160ms ease;
+  transition:
+    background 160ms ease,
+    transform 160ms var(--ease-out),
+    box-shadow 160ms ease;
 }
 
 .status-ready {
@@ -201,8 +223,11 @@ input[type='password']:focus {
 .workspace-grid {
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(250px, 290px) minmax(0, 1fr) minmax(290px, 340px);
-  grid-template-areas: 'library stage dock';
+  grid-template-columns: minmax(250px, 290px) minmax(0, 1fr) minmax(
+      290px,
+      340px
+    );
+  grid-template-areas: "library stage dock";
   gap: 16px;
   overflow: hidden;
 }
@@ -235,6 +260,7 @@ input[type='password']:focus {
   gap: 14px;
   padding: 16px;
   overflow: hidden;
+  min-width: 0;
 }
 
 .library-panel {
@@ -250,6 +276,8 @@ input[type='password']:focus {
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .stage-header {
@@ -285,8 +313,15 @@ input[type='password']:focus {
   gap: 8px;
   text-align: center;
   padding: 16px;
-  background: linear-gradient(140deg, rgba(89, 231, 255, 0.08), rgba(122, 146, 255, 0.08));
-  transition: transform 160ms var(--ease-out), border-color 160ms ease, box-shadow 160ms ease;
+  background: linear-gradient(
+    140deg,
+    rgba(89, 231, 255, 0.08),
+    rgba(122, 146, 255, 0.08)
+  );
+  transition:
+    transform 160ms var(--ease-out),
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .compact-dropzone.drag-over {
@@ -298,6 +333,7 @@ input[type='password']:focus {
 .library-scroll,
 .dock-body {
   min-height: 0;
+  min-width: 0;
   overflow: auto;
   padding-right: 4px;
   scrollbar-width: thin;
@@ -338,7 +374,20 @@ input[type='password']:focus {
   color: var(--text-secondary);
   display: grid;
   gap: 6px;
-  transition: transform 180ms var(--ease-out), background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  transition:
+    transform 180ms var(--ease-out),
+    background 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.utility-card strong,
+.session-summary strong {
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .session-summary:hover,
@@ -428,10 +477,14 @@ input[type='password']:focus {
 }
 
 .screen-shell::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at top, rgba(89, 231, 255, 0.08), transparent 42%);
+  background: radial-gradient(
+    circle at top,
+    rgba(89, 231, 255, 0.08),
+    transparent 42%
+  );
   animation: ambient-glow 6s ease-in-out infinite;
   pointer-events: none;
 }
@@ -444,7 +497,9 @@ input[type='password']:focus {
   border-radius: 16px;
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.36);
   opacity: 0;
-  transition: opacity 180ms ease, transform 220ms var(--ease-out);
+  transition:
+    opacity 180ms ease,
+    transform 220ms var(--ease-out);
 }
 
 .emulator-canvas.active {
@@ -461,7 +516,11 @@ input[type='password']:focus {
   display: grid;
   place-items: center;
   text-align: center;
-  background: linear-gradient(180deg, rgba(18, 34, 67, 0.18), rgba(10, 21, 42, 0.46));
+  background: linear-gradient(
+    180deg,
+    rgba(18, 34, 67, 0.18),
+    rgba(10, 21, 42, 0.46)
+  );
   animation: fade-in 260ms ease both;
 }
 
@@ -495,12 +554,26 @@ input[type='password']:focus {
 
 .utility-dock {
   grid-template-rows: auto auto auto minmax(0, 1fr);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .dock-tabs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 6px;
+}
+
+.dock-tabs-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.dock-tab {
+  font-size: 0.85rem;
+  padding: 10px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dock-tab.active {
@@ -557,7 +630,11 @@ input[type='password']:focus {
   border: 1px solid rgba(125, 161, 255, 0.18);
   border-radius: 28px;
   padding: 20px;
-  background: linear-gradient(180deg, rgba(12, 26, 51, 0.98), rgba(9, 20, 39, 0.98));
+  background: linear-gradient(
+    180deg,
+    rgba(12, 26, 51, 0.98),
+    rgba(9, 20, 39, 0.98)
+  );
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.45);
   display: grid;
   gap: 16px;
@@ -624,9 +701,227 @@ input[type='password']:focus {
   }
 }
 
+/* ── Multiplayer ────────────────────────────────────────────────────────── */
+
+.multiplayer-content {
+  gap: 12px;
+}
+
+.multiplayer-status-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 18px;
+  padding: 12px 16px;
+  background: var(--panel-soft);
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  transition: background 180ms ease;
+}
+
+.multiplayer-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+  transition:
+    background 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.multiplayer-status-dot.active {
+  background: var(--accent-warm);
+  box-shadow: 0 0 8px rgba(255, 176, 103, 0.5);
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
+.multiplayer-status-dot.connected {
+  background: #61db80;
+  box-shadow: 0 0 8px rgba(97, 219, 128, 0.5);
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.multiplayer-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.multiplayer-btn {
+  width: 100%;
+  text-align: center;
+  font-weight: 600;
+}
+
+.host-btn {
+  background: linear-gradient(
+    135deg,
+    rgba(89, 231, 255, 0.18),
+    rgba(122, 146, 255, 0.18)
+  );
+  border-color: rgba(89, 231, 255, 0.35);
+}
+
+.host-btn:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    rgba(89, 231, 255, 0.28),
+    rgba(122, 146, 255, 0.28)
+  );
+  border-color: rgba(89, 231, 255, 0.55);
+}
+
+.join-btn {
+  flex-shrink: 0;
+}
+
+.disconnect-btn {
+  background: rgba(255, 120, 120, 0.12);
+  border-color: rgba(255, 120, 120, 0.35);
+  color: #ffb0b7;
+}
+
+.disconnect-btn:hover:not(:disabled) {
+  background: rgba(255, 120, 120, 0.22);
+  border-color: rgba(255, 120, 120, 0.55);
+}
+
+.multiplayer-join-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.join-code-input {
+  border: 1px solid rgba(125, 161, 255, 0.18);
+  border-radius: 14px;
+  background: rgba(8, 18, 38, 0.88);
+  color: var(--text-primary);
+  padding: 11px 14px;
+  font-size: 1.05rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  text-align: center;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.join-code-input:focus {
+  outline: none;
+  border-color: rgba(89, 231, 255, 0.42);
+  box-shadow: 0 0 0 3px rgba(89, 231, 255, 0.12);
+}
+
+.join-code-input::placeholder {
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--text-muted);
+}
+
+.room-code-card {
+  border-radius: 18px;
+  padding: 16px;
+  background: linear-gradient(
+    135deg,
+    rgba(89, 231, 255, 0.1),
+    rgba(122, 146, 255, 0.1)
+  );
+  border: 1px solid rgba(89, 231, 255, 0.25);
+  text-align: center;
+  cursor: pointer;
+  display: grid;
+  gap: 8px;
+  transition:
+    transform 180ms var(--ease-out),
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.room-code-card:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(
+    135deg,
+    rgba(89, 231, 255, 0.16),
+    rgba(122, 146, 255, 0.16)
+  );
+  box-shadow: 0 10px 28px rgba(89, 231, 255, 0.12);
+}
+
+.room-code-value {
+  font-size: 2rem;
+  letter-spacing: 0.3em;
+  color: var(--accent);
+  font-weight: 800;
+  font-family: "Courier New", "Consolas", monospace;
+}
+
+.room-code-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.multiplayer-save-section {
+  display: grid;
+  gap: 10px;
+}
+
+/* ── Remote Display ─────────────────────────────────────────────────────── */
+
+.remote-display-wrapper {
+  display: grid;
+  gap: 10px;
+  border-radius: 18px;
+  padding: 14px;
+  background: var(--panel-soft);
+  animation: fade-in 260ms ease both;
+}
+
+.remote-display-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.remote-display-label {
+  font-size: 0.82rem;
+  color: #61db80;
+}
+
+.remote-screen-shell {
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.6);
+  aspect-ratio: 160 / 144;
+}
+
+.remote-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  display: block;
+}
+
 @media (max-width: 1480px) {
   .workspace-grid {
-    grid-template-columns: minmax(230px, 280px) minmax(0, 1fr) minmax(280px, 320px);
+    grid-template-columns: minmax(230px, 280px) minmax(0, 1fr) minmax(
+        280px,
+        320px
+      );
   }
 
   .topbar-copy {
@@ -636,7 +931,10 @@ input[type='password']:focus {
 
 @media (max-width: 1240px) {
   .workspace-grid {
-    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(260px, 300px);
+    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(
+        260px,
+        300px
+      );
     gap: 14px;
   }
 
@@ -662,8 +960,8 @@ input[type='password']:focus {
   .workspace-grid {
     grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
     grid-template-areas:
-      'library stage'
-      'dock dock';
+      "library stage"
+      "dock dock";
     overflow: visible;
   }
 
@@ -696,9 +994,9 @@ input[type='password']:focus {
   .workspace-grid {
     grid-template-columns: 1fr;
     grid-template-areas:
-      'library'
-      'stage'
-      'dock';
+      "library"
+      "stage"
+      "dock";
   }
 
   .topbar-meta,

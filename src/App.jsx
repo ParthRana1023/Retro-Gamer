@@ -3,6 +3,8 @@ import { AuthPanel } from './components/AuthPanel';
 import { ControlsModal } from './components/ControlsModal';
 import { EmulatorDisplay } from './components/EmulatorDisplay';
 import { Library } from './components/Library';
+import { MultiplayerLobby } from './components/MultiplayerLobby';
+import { RemoteDisplay } from './components/RemoteDisplay';
 import './App.css';
 import {
   ControllerManager,
@@ -14,6 +16,7 @@ import {
 import { detectConsoleProfile, EmulatorCore } from './services/emulatorCore';
 import { getCurrentUser, onAuthStateChange, signIn, signOut, signUp } from './services/supabase';
 import { SAVE_TYPES, StorageManager } from './services/storageManager';
+import { CONNECTION_STATES, WebRTCManager } from './services/webrtcManager';
 
 const KEY_BINDINGS_STORAGE_KEY = 'retrogamer.keyBindings';
 const VOLUME_STORAGE_KEY = 'retrogamer.volume';
@@ -59,6 +62,7 @@ function App() {
   const controllerRef = useRef(new ControllerManager(getBindingsForConsole(readStoredBindingProfiles(), 'default')));
   const emulatorRef = useRef(new EmulatorCore());
   const volumeReloadInFlightRef = useRef(false);
+  const webrtcRef = useRef(new WebRTCManager());
 
   const [roms, setRoms] = useState([]);
   const [activeRomId, setActiveRomId] = useState(null);
@@ -73,6 +77,11 @@ function App() {
   const [authExpanded, setAuthExpanded] = useState(false);
   const [volumeReloadPending, setVolumeReloadPending] = useState(false);
   const [controlsModalOpen, setControlsModalOpen] = useState(false);
+  const [connectionState, setConnectionState] = useState(CONNECTION_STATES.IDLE);
+  const [roomCode, setRoomCode] = useState(null);
+  const [isHost, setIsHost] = useState(false);
+  const [remoteStream, setRemoteStream] = useState(null);
+  const [peerSaveData, setPeerSaveData] = useState(null);
 
   const activeRom = useMemo(
     () => roms.find((rom) => rom.id === activeRomId) ?? null,
@@ -442,6 +451,89 @@ function App() {
     }
   };
 
+  // ── Multiplayer handlers ────────────────────────────────────────────────
+
+  useEffect(() => {
+    const mgr = webrtcRef.current;
+
+    mgr.onStateChange = (nextState) => {
+      setConnectionState(nextState);
+
+      if (nextState === CONNECTION_STATES.CONNECTED) {
+        setMessage('Peer connected! Ready for multiplayer.');
+      } else if (nextState === CONNECTION_STATES.DISCONNECTED) {
+        setMessage('Peer disconnected.');
+        setRemoteStream(null);
+      } else if (nextState === CONNECTION_STATES.ERROR) {
+        setMessage('Multiplayer connection error.');
+      }
+    };
+
+    mgr.onRemoteStream = (stream) => {
+      setRemoteStream(stream);
+    };
+
+    mgr.onSaveReceived = (saveBuffer) => {
+      setPeerSaveData(saveBuffer);
+      setMessage('Peer save file received! Ready to start dual emulation.');
+    };
+
+    mgr.onDataMessage = (msg) => {
+      if (msg.type === 'input') {
+        // In dual‑emulation mode the host feeds Player 2 inputs.
+        // For standard netplay, inputs are handled by RetroArch internally.
+        emulatorRef.current.setInputState(msg.snapshot);
+      }
+    };
+
+    return () => {
+      mgr.onStateChange = null;
+      mgr.onRemoteStream = null;
+      mgr.onSaveReceived = null;
+      mgr.onDataMessage = null;
+    };
+  }, []);
+
+  const handleHostRoom = async (multiplayerMode) => {
+    try {
+      const code = await webrtcRef.current.hostRoom(multiplayerMode);
+      setRoomCode(code);
+      setIsHost(true);
+      setMessage(`Room created! Share code: ${code}`);
+    } catch (error) {
+      setMessage(`Failed to create room: ${error.message}`);
+    }
+  };
+
+  const handleJoinRoom = async (code, multiplayerMode) => {
+    try {
+      await webrtcRef.current.joinRoom(code, multiplayerMode);
+      setRoomCode(code);
+      setIsHost(false);
+      setMessage(`Joining room ${code}…`);
+    } catch (error) {
+      setMessage(`Failed to join room: ${error.message}`);
+    }
+  };
+
+  const handleDisconnect = () => {
+    webrtcRef.current.disconnect();
+    setRoomCode(null);
+    setIsHost(false);
+    setRemoteStream(null);
+    setPeerSaveData(null);
+    setMessage('Disconnected from multiplayer.');
+  };
+
+  const handleSendSave = (saveBuffer) => {
+    const sent = webrtcRef.current.sendSaveFile(saveBuffer);
+    if (sent) {
+      setMessage('Save file sent to host!');
+    } else {
+      setMessage('Could not send save file. Check connection.');
+    }
+  };
+
   return (
     <div className="dashboard-shell">
       <header className="topbar">
@@ -503,13 +595,20 @@ function App() {
             <span>{sessionMeta}</span>
           </div>
 
-          <div className="dock-tabs" role="tablist" aria-label="Utility dock tabs">
+          <div className="dock-tabs dock-tabs-4" role="tablist" aria-label="Utility dock tabs">
             <button
               type="button"
               className={activeDockTab === 'session' ? 'dock-tab active' : 'dock-tab'}
               onClick={() => setActiveDockTab('session')}
             >
               Session
+            </button>
+            <button
+              type="button"
+              className={activeDockTab === 'multiplayer' ? 'dock-tab active' : 'dock-tab'}
+              onClick={() => setActiveDockTab('multiplayer')}
+            >
+              Multiplayer
             </button>
             <button
               type="button"
@@ -543,6 +642,20 @@ function App() {
                   <strong>The controls popup now switches labels and available buttons based on the active console.</strong>
                 </div>
               </div>
+            ) : null}
+
+            {activeDockTab === 'multiplayer' ? (
+              <MultiplayerLobby
+                consoleName={activeConsoleName}
+                connectionState={connectionState}
+                roomCode={roomCode}
+                isHost={isHost}
+                onHostRoom={handleHostRoom}
+                onJoinRoom={handleJoinRoom}
+                onDisconnect={handleDisconnect}
+                onSendSave={handleSendSave}
+                activeRom={activeRom}
+              />
             ) : null}
 
             {activeDockTab === 'audio' ? (
@@ -590,6 +703,14 @@ function App() {
           </div>
         </aside>
       </main>
+
+      {/* Remote stream overlay for GB/GBC Client in dual-emulation mode */}
+      {remoteStream && !isHost ? (
+        <RemoteDisplay
+          remoteStream={remoteStream}
+          connectionLabel="Connected to Host"
+        />
+      ) : null}
 
       <ControlsModal
         isOpen={controlsModalOpen}

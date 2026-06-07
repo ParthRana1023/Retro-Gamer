@@ -4,9 +4,27 @@ const EXTENSION_MAP = {
   '.nes': { core: 'fceumm', consoleName: 'NES' },
   '.sfc': { core: 'snes9x', consoleName: 'SNES' },
   '.smc': { core: 'snes9x', consoleName: 'SNES' },
-  '.gb': { core: 'mgba', consoleName: 'GB', sramType: 'sav' },
-  '.gbc': { core: 'mgba', consoleName: 'GBC', sramType: 'sav' },
-  '.gba': { core: 'mgba', consoleName: 'GBA', sramType: 'sav' },
+  '.gb': {
+    core: 'mgba',
+    consoleName: 'GB',
+    sramType: 'sav',
+    multiplayerCore: 'tgbdual',
+  },
+  '.gbc': {
+    core: 'mgba',
+    consoleName: 'GBC',
+    sramType: 'sav',
+    multiplayerCore: 'tgbdual',
+  },
+  '.gba': {
+    core: 'mgba',
+    consoleName: 'GBA',
+    sramType: 'sav',
+    multiplayerCore: 'gpsp',
+    multiplayerConfig: {
+      gpsp_link_cable_connectivity: 'Wireless Adapter',
+    },
+  },
   '.md': { core: 'genesis_plus_gx', consoleName: 'Genesis', sramType: 'srm' },
   '.gen': { core: 'genesis_plus_gx', consoleName: 'Genesis', sramType: 'srm' },
   '.bin': { core: 'genesis_plus_gx', consoleName: 'Genesis', sramType: 'srm' },
@@ -98,6 +116,122 @@ export class EmulatorCore {
       isFastForwarding: false,
       lastInputSnapshot: {},
       volume: clampVolume(options.volume ?? 75),
+      isMultiplayer: false,
+    };
+
+    return this.session;
+  }
+
+  /**
+   * Launch the tgbdual core for GB/GBC link‑cable dual emulation.
+   *
+   * @param {File} hostFile  – Player A's ROM file
+   * @param {File} clientFile – Player B's ROM file (may be the same game)
+   * @param {Object} options – { hostSram, clientSram, volume }
+   */
+  async loadDualRom(hostFile, clientFile, options = {}) {
+    if (!this.canvas) {
+      throw new Error('Emulator canvas is not ready yet.');
+    }
+
+    this.exit();
+
+    const instance = await Nostalgist.launch({
+      core: 'tgbdual',
+      rom: [hostFile, clientFile],
+      element: this.canvas,
+      sram: options.hostSram ?? undefined,
+      cache: { rom: false },
+      respondToGlobalEvents: false,
+      retroarchConfig: {
+        audio_enable: true,
+        audio_mute_enable: options.volume === 0,
+        audio_volume: volumeToDb(options.volume ?? 75),
+        menu_mouse_enable: false,
+        savestate_thumbnail_enable: true,
+      },
+    });
+
+    this.instance = instance;
+    this.session = {
+      file: hostFile,
+      name: `${hostFile.name} ⇄ ${clientFile.name}`,
+      size: hostFile.size + clientFile.size,
+      consoleName: detectConsoleProfile(hostFile.name).consoleName,
+      core: 'tgbdual',
+      sramType: 'sav',
+      loadedAt: Date.now(),
+      isExperimental: false,
+      isPaused: false,
+      isFastForwarding: false,
+      lastInputSnapshot: {},
+      volume: clampVolume(options.volume ?? 75),
+      isMultiplayer: true,
+      multiplayerMode: 'dual_emulation',
+    };
+
+    return this.session;
+  }
+
+  /**
+   * Launch a ROM with RetroArch netplay enabled (standard or wireless adapter).
+   *
+   * @param {File} file     – The ROM file
+   * @param {Object} options – { sram, state, volume, isHost }
+   */
+  async loadRomWithNetplay(file, options = {}) {
+    if (!this.canvas) {
+      throw new Error('Emulator canvas is not ready yet.');
+    }
+
+    const profile = detectConsoleProfile(file?.name);
+    const core = profile.multiplayerCore ?? profile.core;
+
+    if (!core) {
+      throw new Error(`No multiplayer core available for "${file?.name ?? 'unknown file'}".`);
+    }
+
+    this.exit();
+
+    const retroarchConfig = {
+      audio_enable: true,
+      audio_mute_enable: options.volume === 0,
+      audio_volume: volumeToDb(options.volume ?? 75),
+      menu_mouse_enable: false,
+      savestate_thumbnail_enable: true,
+      netplay_enable: true,
+      netplay_is_client: !options.isHost,
+      ...(profile.multiplayerConfig ?? {}),
+    };
+
+    const instance = await Nostalgist.launch({
+      core,
+      rom: file,
+      element: this.canvas,
+      state: options.state ?? undefined,
+      sram: options.sram ?? undefined,
+      sramType: profile.sramType,
+      cache: { rom: false },
+      respondToGlobalEvents: false,
+      retroarchConfig,
+    });
+
+    this.instance = instance;
+    this.session = {
+      file,
+      name: file.name,
+      size: file.size,
+      consoleName: profile.consoleName,
+      core,
+      sramType: profile.sramType,
+      loadedAt: Date.now(),
+      isExperimental: false,
+      isPaused: false,
+      isFastForwarding: false,
+      lastInputSnapshot: {},
+      volume: clampVolume(options.volume ?? 75),
+      isMultiplayer: true,
+      multiplayerMode: profile.multiplayerCore === 'gpsp' ? 'wireless_adapter' : 'standard_netplay',
     };
 
     return this.session;
